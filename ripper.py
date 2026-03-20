@@ -242,7 +242,11 @@ def _resolve_unknown_from_acoustid(album_dir: str, acoustid_results: list) -> tu
 
     best_artist, a_count = artist_votes.most_common(1)[0]
     best_album,  b_count  = album_votes.most_common(1)[0]
-    threshold = len(acoustid_results) * 0.5
+
+    # Use a lower threshold (30%) to handle cases where the same artist or album
+    # is returned in multiple languages/forms by different fingerprint services,
+    # splitting the vote (e.g. "TOLAKU" vs "脱拉库" for the same artist).
+    threshold = len(acoustid_results) * 0.3
 
     if a_count < threshold or b_count < threshold:
         return None
@@ -258,11 +262,23 @@ def _resolve_unknown_from_acoustid(album_dir: str, acoustid_results: list) -> tu
     for fname in os.listdir(album_dir):
         shutil.move(os.path.join(album_dir, fname), os.path.join(new_dir, fname))
 
-    # Retag all moved MP3s
+    # Retag tracks that weren't individually identified (still tagged Unknown)
     for fname in os.listdir(new_dir):
-        if fname.endswith(".mp3"):
-            _update_id3(os.path.join(new_dir, fname),
-                        {"artist": best_artist, "album": best_album})
+        if not fname.endswith(".mp3"):
+            continue
+        try:
+            t = ID3(os.path.join(new_dir, fname))
+            track_artist = str(t.get("TPE1", ""))
+            track_album  = str(t.get("TALB", ""))
+        except Exception:
+            track_artist = track_album = ""
+        fields = {}
+        if track_artist in ("", "Unknown Artist"):
+            fields["artist"] = best_artist
+        if track_album in ("", "Unknown Album"):
+            fields["album"] = best_album
+        if fields:
+            _update_id3(os.path.join(new_dir, fname), fields)
 
     # Remove now-empty old directories
     try:
@@ -307,23 +323,24 @@ def process_disc(album: dict, device=config.DEVICE):
 
                 ok = _rip_with_retry(track_num, wav_path, device)
 
+                aid = None
                 if ok and is_unknown:
-                    aid = None
                     if config.ACOUSTID_API_KEY:
                         aid = acoustid_lookup.lookup_track(wav_path)
                     if not aid and config.ACRCLOUD_KEY:
                         aid = acrcloud_lookup.lookup_track(wav_path)
                     if aid:
                         acoustid_results.append(aid)
-                        if aid.get("title") and title.startswith("Track "):
+                        if aid.get("title"):
                             title = aid["title"]
-                            log.info("Track %d identified: %s", track_num, title)
+                        log.info("Track %d identified: %s – %s / %s",
+                                 track_num, aid.get("artist","?"), aid.get("album","?"), title)
 
                 mp3_path = os.path.join(dest_album_dir, f"{track_num:02d}_{_sanitize(title)}.mp3")
                 tags = {
-                    "artist": artist,
-                    "album": album_title,
-                    "title": title,
+                    "artist": aid["artist"] if aid and aid.get("artist") else artist,
+                    "album":  aid["album"]  if aid and aid.get("album")  else album_title,
+                    "title":  title,
                     "track_number": track_num,
                 }
 
