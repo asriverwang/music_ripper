@@ -1,4 +1,4 @@
-# music_ripper
+# AI-Powered Music Ripper
 
 A fully automated CD ripping daemon for Linux. Insert a disc, walk away — it identifies the album, rips every track to 320 kbps MP3, tags the files, and ejects the disc when done.
 
