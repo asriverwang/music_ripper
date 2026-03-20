@@ -10,7 +10,7 @@ A fully automated CD ripping daemon for Linux. Insert a disc, walk away — it i
   2. MusicBrainz disc ID
   3. LLM fallback (Minimax, OpenAI, or Claude) — identifies disc from track count and durations
 - **LLM disambiguation** — when MusicBrainz returns multiple releases, the LLM picks the most canonical one
-- **AcoustID fingerprinting** (optional) — per-track acoustic fingerprint lookup after ripping; resolves Unknown Artist/Album via majority vote
+- **AcoustID + ACRCloud fingerprinting** ⭐ — per-track audio fingerprinting for discs not found in any database; resolves Unknown Artist/Album via majority vote. **Strongly recommended** — see [Optional integrations](#optional-integrations)
 - **Discogs enrichment** (optional) — adds year, label, and genre tags after ripping
 - **Duplicate detection** — previously ripped discs are ejected immediately
 - **Rip + encode pipeline** — encoding runs in a background thread while the next track is being ripped
@@ -74,7 +74,10 @@ Then edit `.env`. The only required field is `MUSIC_DIR` (and at least one LLM A
 | `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name |
 | `CLAUDE_API_KEY` | — | Anthropic Claude API key |
 | `CLAUDE_MODEL` | `claude-haiku-4-5-20251001` | Claude model name |
-| `ACOUSTID_API_KEY` | — | AcoustID API key (free at acoustid.org) |
+| `ACOUSTID_API_KEY` | — | AcoustID API key — Western music fingerprinting |
+| `ACRCLOUD_HOST` | — | ACRCloud host (from project dashboard) |
+| `ACRCLOUD_KEY` | — | ACRCloud access key |
+| `ACRCLOUD_SECRET` | — | ACRCloud access secret |
 | `DISCOGS_TOKEN` | — | Discogs personal access token |
 
 ## Usage
@@ -155,12 +158,46 @@ Set the API key for whichever provider you have access to. Only one is needed. I
 
 ## Optional integrations
 
+> **For the best identification results, set up at least one audio fingerprinting service.**
+> MusicBrainz and GnuDB work from the disc's table of contents — if your pressing isn't in their database, the disc will be saved as Unknown Artist. AcoustID and ACRCloud fingerprint the actual audio waveform and can identify discs that no TOC database knows about. ACRCloud is especially important for Asian music.
+
 ### AcoustID
 
-Acoustic fingerprinting provides a second identification pass after ripping. Each WAV is fingerprinted with `fpcalc` and looked up against the AcoustID database. If a majority of tracks agree on artist + album, the album directory is renamed and all files are retagged.
+Acoustic fingerprinting for Western music. Only runs when a disc is unidentified (Unknown Artist / Unknown Album). If a majority of tracks match, the directory is renamed and all files are retagged.
 
-1. Register for a free key at [acoustid.org](https://acoustid.org/login)
-2. Set `ACOUSTID_API_KEY` in `.env`
+**Setup:**
+1. Sign in or register at [acoustid.org](https://acoustid.org/login) — a MusicBrainz account works
+2. Go to **Your applications** → **Register an application** → copy the API key
+3. Install the fingerprinting tool:
+   ```bash
+   sudo apt install libchromaprint-tools
+   ```
+4. Add to `.env`:
+   ```
+   ACOUSTID_API_KEY=your_key_here
+   ```
+
+> Note: AcoustID covers mainly Western music. For Asian releases, use ACRCloud instead.
+
+### ACRCloud
+
+Audio fingerprinting with significantly better Asian music coverage (used by TikTok, SoundHound, and major streaming platforms). Runs as a fallback when AcoustID finds nothing.
+
+**Setup:**
+1. Sign up at [acrcloud.com](https://www.acrcloud.com) → **Console** → **Create Project**
+2. Choose **Audio & Video Recognition**
+3. Copy the three credentials from the project dashboard:
+   - **Host** (e.g. `identify-us-west-2.acrcloud.com`)
+   - **Access Key**
+   - **Access Secret**
+4. Add to `.env`:
+   ```
+   ACRCLOUD_HOST=identify-us-west-2.acrcloud.com
+   ACRCLOUD_KEY=your_access_key
+   ACRCLOUD_SECRET=your_access_secret
+   ```
+
+Free tier: 1,000 recognitions/day.
 
 ### Discogs
 
@@ -202,7 +239,8 @@ music_ripper/
 ├── metadata.py        # disc ID lookup pipeline (MusicBrainz → GnuDB → LLM)
 ├── gnudb.py           # GnuDB/CDDB lookup
 ├── ripper.py          # ripping, encoding, AcoustID, Discogs, duplicate DB
-├── acoustid_lookup.py # per-track AcoustID fingerprinting
+├── acoustid_lookup.py # per-track AcoustID fingerprinting (Western music)
+├── acrcloud_lookup.py # per-track ACRCloud fingerprinting (Asian music)
 ├── discogs_lookup.py  # album-level Discogs enrichment
 ├── install.sh         # dependency installer
 ├── .env               # your local configuration (not committed)

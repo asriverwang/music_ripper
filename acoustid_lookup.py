@@ -54,14 +54,14 @@ def lookup_track(wav_path: str) -> dict | None:
         return None
     duration, fp = fp_data
 
-    params = {
+    data = {
         "client": config.ACOUSTID_API_KEY,
         "duration": duration,
         "fingerprint": fp,
         "meta": "recordings releases releasegroups",
     }
     try:
-        resp = requests.get(_API_URL, params=params, timeout=15)
+        resp = requests.post(_API_URL, data=data, timeout=15)
         resp.raise_for_status()
         data = resp.json()
 

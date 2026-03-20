@@ -35,7 +35,7 @@ def read_disc(device=config.DEVICE, retries=5, retry_delay=3):
                 log.warning("TOC read failed (attempt %d/%d): %s — retrying in %ds",
                             attempt, retries, e, retry_delay)
                 time.sleep(retry_delay)
-    raise last_err
+    raise last_err or discid.DiscError(f"Could not read disc from {device}")
 
 
 def _format_duration(ms):

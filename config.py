@@ -15,7 +15,7 @@ LLM_PROVIDER = os.environ.get('LLM_PROVIDER', '')
 
 MINIMAX_API_KEY = os.environ.get('MINIMAX_API_KEY', '')
 MINIMAX_API_URL = os.environ.get('MINIMAX_API_URL', 'https://api.minimax.io/v1/text/chatcompletion_v2')
-MINIMAX_MODEL   = os.environ.get('MINIMAX_MODEL', 'MiniMax-M2.7')
+MINIMAX_MODEL   = os.environ.get('MINIMAX_MODEL', 'abab6.5s-chat')
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 OPENAI_API_URL = os.environ.get('OPENAI_API_URL', 'https://api.openai.com/v1/chat/completions')
@@ -30,6 +30,11 @@ LLM_TIMEOUT = int(os.environ.get('LLM_TIMEOUT', '90'))
 
 # AcoustID acoustic fingerprinting (https://acoustid.org)
 ACOUSTID_API_KEY = os.environ.get('ACOUSTID_API_KEY', '')
+
+# ACRCloud audio recognition — better Asian music coverage (https://acrcloud.com)
+ACRCLOUD_HOST   = os.environ.get('ACRCLOUD_HOST', '')
+ACRCLOUD_KEY    = os.environ.get('ACRCLOUD_KEY', '')
+ACRCLOUD_SECRET = os.environ.get('ACRCLOUD_SECRET', '')
 
 # Discogs metadata enrichment (https://www.discogs.com/settings/developers)
 DISCOGS_TOKEN = os.environ.get('DISCOGS_TOKEN', '')

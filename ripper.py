@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, Future
 from mutagen.id3 import ID3, TPE1, TALB, TDRC, TCON, TPUB
 
 import acoustid_lookup
+import acrcloud_lookup
 import config
 import discogs_lookup
 
@@ -56,6 +57,7 @@ def _sanitize(name: str) -> str:
     name = name.strip()
     name = re.sub(r'[\\/*?:"<>|]', "_", name)
     name = re.sub(r'\s+', ' ', name)
+    name = name.rstrip(".")  # Windows can't open paths with trailing periods
     return name or "Unknown"
 
 
@@ -305,14 +307,17 @@ def process_disc(album: dict, device=config.DEVICE):
 
                 ok = _rip_with_retry(track_num, wav_path, device)
 
-                if ok and config.ACOUSTID_API_KEY:
-                    aid = acoustid_lookup.lookup_track(wav_path)
+                if ok and is_unknown:
+                    aid = None
+                    if config.ACOUSTID_API_KEY:
+                        aid = acoustid_lookup.lookup_track(wav_path)
+                    if not aid and config.ACRCLOUD_KEY:
+                        aid = acrcloud_lookup.lookup_track(wav_path)
                     if aid:
                         acoustid_results.append(aid)
-                        # Upgrade track title if it was a placeholder
                         if aid.get("title") and title.startswith("Track "):
                             title = aid["title"]
-                            log.info("AcoustID track title: %s", title)
+                            log.info("Track %d identified: %s", track_num, title)
 
                 mp3_path = os.path.join(dest_album_dir, f"{track_num:02d}_{_sanitize(title)}.mp3")
                 tags = {

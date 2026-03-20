@@ -66,8 +66,10 @@ def handle_disc_inserted(device_path: str):
     try:
         album = meta.get_album_metadata(device_path)
     except Exception as e:
-        log.exception("Could not read disc metadata")
-        log.info("Ejecting unreadable disc")
+        if "no actual audio tracks" in str(e):
+            log.info("Data disc detected (no audio tracks) — ejecting")
+        else:
+            log.exception("Could not read disc metadata")
         ripper.eject(device_path)
         return
 
@@ -122,9 +124,12 @@ def monitor():
         # ID_CDROM_MEDIA=1 means media is present
         if device.get("ID_CDROM_MEDIA") != "1":
             continue
-        # Skip recordable blanks
+        # Skip recordable blanks and data-only discs (DVDs, CD-ROMs)
         if device.get("ID_CDROM_MEDIA_CD_R") or device.get("ID_CDROM_MEDIA_CD_RW"):
             log.info("Detected recordable disc — skipping")
+            continue
+        if not device.get("ID_CDROM_MEDIA_TRACK_COUNT_AUDIO"):
+            log.info("Detected data disc (no audio tracks) — skipping")
             continue
 
         # Debounce: ignore events that arrive within DEBOUNCE_SECONDS of the last one
