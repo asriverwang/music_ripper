@@ -124,9 +124,10 @@ def monitor():
         # ID_CDROM_MEDIA=1 means media is present
         if device.get("ID_CDROM_MEDIA") != "1":
             continue
-        # Skip recordable blanks and data-only discs (DVDs, CD-ROMs)
-        if device.get("ID_CDROM_MEDIA_CD_R") or device.get("ID_CDROM_MEDIA_CD_RW"):
-            log.info("Detected recordable disc — skipping")
+        # Skip blank recordable discs (no tracks written yet)
+        if (device.get("ID_CDROM_MEDIA_CD_R") or device.get("ID_CDROM_MEDIA_CD_RW")) \
+                and not device.get("ID_CDROM_MEDIA_TRACK_COUNT_AUDIO"):
+            log.info("Detected blank recordable disc — skipping")
             continue
         if not device.get("ID_CDROM_MEDIA_TRACK_COUNT_AUDIO"):
             log.info("Detected data disc (no audio tracks) — skipping")
