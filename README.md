@@ -124,24 +124,24 @@ Insert disc
 MusicBrainz disc ID
     ├── 1 result ────────────────────────────────────────────────────┐
     ├── multiple results → LLM picks most canonical release ─────────┤
-    └── 0 results                                                     │
-            │                                                         │
-            ▼                                                         │
+    └── 0 results                                                    │
+            │                                                        │
+            ▼                                                        │
         GnuDB / CDDB ──── found (not garbled) ───────────────────────┤
-            │ not found / garbled encoding                            │
-            ▼                                                         │
+            │ not found / garbled encoding                           │
+            ▼                                                        │
         LLM identifies from track count + durations ─────────────────┤
-                                                                      │
-                                                                      ▼
+                                                                     │
+                                                                     ▼
                                                                 Rip + encode
-                                                                      │
-                                                  AcoustID fingerprint (if key set)
-                                                  → majority vote resolves Unknown
-                                                                      │
-                                                  Discogs enrichment (if token set)
-                                                  → year / label / genre tags
-                                                                      │
-                                                                 Eject disc
+                                                                     │
+                                                 AcoustID fingerprint (if key set)
+                                                 → majority vote resolves Unknown
+                                                                     │
+                                                 Discogs enrichment (if token set)
+                                                 → year / label / genre tags
+                                                                     │
+                                                                Eject disc
 ```
 
 MusicBrainz is tried first because it uses a precise SHA-1 disc ID with no encoding ambiguity. GnuDB covers pressings not in MusicBrainz but its entries are sometimes stored in legacy encodings (Shift-JIS, GBK, EUC-KR, etc.) — the ripper auto-detects the encoding and discards results that look garbled, falling through to the LLM instead.
