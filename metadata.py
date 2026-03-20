@@ -64,7 +64,11 @@ def _ask_minimax(prompt: str) -> str:
     }
     resp = requests.post(config.MINIMAX_API_URL, headers=headers, json=payload, timeout=config.LLM_TIMEOUT)
     resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"].strip()
+    body = resp.json()
+    choices = body.get("choices")
+    if not choices:
+        raise RuntimeError(f"Minimax returned no choices: {body}")
+    return choices[0]["message"]["content"].strip()
 
 
 def _ask_openai(prompt: str) -> str:
@@ -82,7 +86,11 @@ def _ask_openai(prompt: str) -> str:
     }
     resp = requests.post(config.OPENAI_API_URL, headers=headers, json=payload, timeout=config.LLM_TIMEOUT)
     resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"].strip()
+    body = resp.json()
+    choices = body.get("choices")
+    if not choices:
+        raise RuntimeError(f"OpenAI returned no choices: {body}")
+    return choices[0]["message"]["content"].strip()
 
 
 def _ask_claude(prompt: str) -> str:

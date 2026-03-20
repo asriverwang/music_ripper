@@ -61,7 +61,7 @@ Then edit `.env`. The only required field is `MUSIC_DIR` (and at least one LLM A
 
 | Variable | Default | Description |
 |---|---|---|
-| `MUSIC_DIR` | `/media/asriver/data/Music` | Root directory for ripped files |
+| `MUSIC_DIR` | `/mnt/music` | Root directory for ripped files |
 | `CD_DEVICE` | `/dev/sr0` | CD/DVD device node |
 | `RIP_PARANOIA` | `2` | `0` = fastest (no correction), `1` = checksums only, `2` = full paranoia |
 | `RIP_TRACK_TIMEOUT` | `300` | Seconds before killing a stuck cdparanoia process |
@@ -174,7 +174,7 @@ After ripping, the album is searched on Discogs to enrich MP3 tags with year, la
 **Permission denied writing to `MUSIC_DIR`**
 
 ```bash
-sudo chown -R $(whoami) /media/asriver/data/Music
+sudo chown -R $(whoami) /mnt/music
 ```
 
 **"Cannot read table of contents"**
@@ -199,7 +199,7 @@ Ensure at least one API key is set in `.env` and that the key is valid. Test man
 music_ripper/
 ├── main.py            # udev monitor + entry point
 ├── config.py          # all configuration, loaded from .env
-├── metadata.py        # disc ID lookup pipeline (GnuDB → MusicBrainz → LLM)
+├── metadata.py        # disc ID lookup pipeline (MusicBrainz → GnuDB → LLM)
 ├── gnudb.py           # GnuDB/CDDB lookup
 ├── ripper.py          # ripping, encoding, AcoustID, Discogs, duplicate DB
 ├── acoustid_lookup.py # per-track AcoustID fingerprinting
