@@ -69,7 +69,7 @@ Then edit `.env`. The only required field is `MUSIC_DIR` (and at least one LLM A
 | `LLM_PROVIDER` | *(auto)* | Force a provider: `minimax`, `openai`, or `claude`. Auto-detected from whichever key is set (Minimax wins if multiple keys are set). |
 | `LLM_TIMEOUT` | `90` | HTTP timeout in seconds for LLM API calls |
 | `MINIMAX_API_KEY` | — | Minimax API key |
-| `MINIMAX_MODEL` | `abab6.5s-chat` | Minimax model name |
+| `MINIMAX_MODEL` | `abab6.5-chat` | Minimax model name — verify current names at [minimaxi.com](https://www.minimaxi.com) |
 | `OPENAI_API_KEY` | — | OpenAI API key |
 | `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name |
 | `CLAUDE_API_KEY` | — | Anthropic Claude API key |
@@ -152,7 +152,7 @@ Set the API key for whichever provider you have access to. Only one is needed. I
 
 | Provider | Key variable | Notes |
 |---|---|---|
-| Minimax | `MINIMAX_API_KEY` | Recommended: `abab6.5s-chat` is fast and accurate |
+| Minimax | `MINIMAX_API_KEY` | Default model: `abab6.5-chat` — check [minimaxi.com](https://www.minimaxi.com) for current model names |
 | OpenAI | `OPENAI_API_KEY` | Default model: `gpt-4o-mini` |
 | Claude | `CLAUDE_API_KEY` | Default model: `claude-haiku-4-5-20251001` |
 
