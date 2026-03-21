@@ -71,7 +71,7 @@ def _query(disc, cddb_id: str):
 
 def _decode(content: bytes) -> str:
     """Decode CDDB response bytes, trying common encodings for Asian entries."""
-    for enc in ("utf-8", "shift-jis", "euc-jp", "gbk", "big5", "euc-kr", "latin-1"):
+    for enc in ("utf-8", "big5", "gbk", "euc-kr", "shift-jis", "euc-jp", "latin-1"):
         try:
             return content.decode(enc)
         except (UnicodeDecodeError, LookupError):
@@ -125,11 +125,18 @@ def _read(category: str, cddb_id: str) -> dict | None:
 
 
 def _is_garbled(text: str) -> bool:
-    """Return True if the text looks like an encoding corruption (mostly '?' chars)."""
+    """Return True if the text looks like an encoding corruption."""
     if not text:
         return False
+    # Literal ? substitution characters
     q = text.count("?")
-    return q > 0 and q / len(text) > 0.3
+    if q > 0 and q / len(text) > 0.3:
+        return True
+    # Dense Latin-1 supplement range (U+00C0–U+00FF) = CJK bytes decoded as Latin-1
+    latin_ext = sum(1 for c in text if '\u00C0' <= c <= '\u00FF')
+    if latin_ext / len(text) > 0.3:
+        return True
+    return False
 
 
 def lookup(disc) -> dict | None:
