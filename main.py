@@ -129,7 +129,7 @@ def monitor():
                 and not device.get("ID_CDROM_MEDIA_TRACK_COUNT_AUDIO"):
             log.info("Detected blank recordable disc — skipping")
             continue
-        if not device.get("ID_CDROM_MEDIA_TRACK_COUNT_AUDIO"):
+        if not int(device.get("ID_CDROM_MEDIA_TRACK_COUNT_AUDIO", 0)):
             log.info("Detected data disc (no audio tracks) — skipping")
             continue
 

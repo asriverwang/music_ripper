@@ -126,7 +126,7 @@ def _ask_llm(prompt: str) -> str:
     )
 
 
-def _release_to_album(release, disc_index=0) -> dict:
+def _release_to_album(release, disc_track_count=None) -> dict:
     """Convert a MusicBrainz release dict to our internal album format."""
     # Artist
     artist_credits = release.get("artist-credit", [])
@@ -137,10 +137,15 @@ def _release_to_album(release, disc_index=0) -> dict:
 
     album_title = release.get("title", "Unknown Album")
 
-    # Find the medium matching our disc
+    # Find the medium whose track count matches the physical disc; fall back to first
     tracks = []
     medium_list = release.get("medium-list", [])
-    medium = medium_list[disc_index] if disc_index < len(medium_list) else (medium_list[0] if medium_list else {})
+    medium = medium_list[0] if medium_list else {}
+    if disc_track_count and len(medium_list) > 1:
+        for m in medium_list:
+            if len(m.get("track-list", [])) == disc_track_count:
+                medium = m
+                break
     for t in medium.get("track-list", []):
         recording = t.get("recording", {})
         tracks.append({
@@ -158,7 +163,7 @@ def _release_to_album(release, disc_index=0) -> dict:
 
 
 def _disambiguate_with_llm(candidates: list, disc: discid.Disc) -> dict:
-    """Use Minimax to pick the best match among several MusicBrainz candidates."""
+    """Use the configured LLM to pick the best match among several MusicBrainz candidates."""
     track_durations = [_format_duration(int(t.length * 1000 / 75)) for t in disc.tracks]
     candidate_summaries = []
     for i, c in enumerate(candidates):
@@ -202,7 +207,7 @@ def _disambiguate_with_llm(candidates: list, disc: discid.Disc) -> dict:
         log.warning("No LLM API key set — using first MusicBrainz candidate as fallback")
         return candidates[0]
 
-    log.info("Asking Minimax to disambiguate %d candidates", len(candidates))
+    log.info("Asking LLM (%s) to disambiguate %d candidates", config.active_llm_provider(), len(candidates))
     raw = _ask_llm(prompt)
     # Strip possible markdown fences
     raw = raw.strip().strip("`").strip()
@@ -210,12 +215,12 @@ def _disambiguate_with_llm(candidates: list, disc: discid.Disc) -> dict:
         raw = raw[4:].strip()
     data = json.loads(raw)
     chosen = int(data.get("index", 0))
-    log.info("Minimax chose candidate %d: %s", chosen, data.get("reason", ""))
+    log.info("LLM chose candidate %d: %s", chosen, data.get("reason", ""))
     return candidates[chosen]
 
 
 def _identify_with_llm(disc: discid.Disc) -> dict:
-    """Ask Minimax to identify an unknown disc from TOC information only."""
+    """Ask the configured LLM to identify an unknown disc from TOC information only."""
     track_info = []
     for i, t in enumerate(disc.tracks, start=1):
         duration_ms = int(t.length * 1000 / 75)
@@ -290,14 +295,14 @@ def get_album_metadata(device=config.DEVICE) -> dict:
             log.warning("MusicBrainz error: %s", e)
 
     if len(releases) == 1:
-        album = _release_to_album(releases[0])
+        album = _release_to_album(releases[0], disc_track_count=len(disc.tracks))
     elif len(releases) > 1:
         try:
             chosen = _disambiguate_with_llm(releases, disc)
         except Exception:
             log.exception("LLM disambiguation failed — falling back to first candidate")
             chosen = releases[0]
-        album = _release_to_album(chosen)
+        album = _release_to_album(chosen, disc_track_count=len(disc.tracks))
     else:
         # 2. GnuDB / CDDB
         album = gnudb.lookup(disc)
