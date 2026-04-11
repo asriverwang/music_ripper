@@ -179,12 +179,15 @@ def _rip_with_retry(track_number: int, wav_path: str, device: str) -> bool:
         rip_track(track_number, wav_path, device)
         return True
     except subprocess.TimeoutExpired:
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
+        if config.RIP_PARANOIA == 0:
+            log.error("Track %d timed out after %ds — skipping", track_number, config.RIP_TRACK_TIMEOUT)
+            return False
         log.warning(
             "Track %d timed out after %ds — retrying with paranoia disabled",
             track_number, config.RIP_TRACK_TIMEOUT,
         )
-        if os.path.exists(wav_path):
-            os.remove(wav_path)
     except RuntimeError as e:
         log.error("Track %d rip error: %s", track_number, e)
         return False

@@ -6,7 +6,7 @@ load_dotenv(Path(__file__).parent / ".env")
 
 MUSIC_DIR = os.environ.get('MUSIC_DIR', '/media/asriver/data/Music')
 DEVICE = os.environ.get('CD_DEVICE', '/dev/sr0')
-PROCESSED_DB = os.path.expanduser('~/.music_ripper_processed.json')
+PROCESSED_DB = str(Path(__file__).parent / 'processed.json')
 TEMP_DIR = '/tmp/music_ripper'
 
 # LLM provider: "minimax" | "openai" | "claude"

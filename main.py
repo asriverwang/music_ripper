@@ -144,6 +144,8 @@ def monitor():
             handle_disc_inserted(config.DEVICE)
         except Exception as e:
             log.exception("Unexpected error handling disc: %s", e)
+        finally:
+            last_handled = time.monotonic()
 
 
 if __name__ == "__main__":
